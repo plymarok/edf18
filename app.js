@@ -110,4 +110,112 @@ function decideMT(){
     out.className="bad"; out.innerHTML="❌ Facture E : écart &gt; 1 € → <b>BAR</b> (demander facture corrigée).";
   }
 }
-function rese
+function resetMT(){
+  $$("input[name='mt-type']").forEach(x=>x.checked=false);
+  $("#mt-futu").value="2031.60"; $("#mt-compta").value="2031.60"; $("#mt-cause").checked=false;
+  $("#mt-out").className="warn"; $("#mt-out").innerHTML="👉 Renseigne les montants puis « Décider ».";
+}
+
+/* -------------------------------- Module TVA ------------------------------ */
+function decideTVA(){
+  const ttcPaper = $("#tva-ttc").checked;
+  const m = $("#tva-mention").value;
+  const ftnTTC = $("#tva-ftn-ttc").checked;
+  const out = $("#tva-out");
+
+  if(ttcPaper) return out.className="bad", out.innerHTML="❌ Facture papier en <b>TTC</b> → <b>BAR</b>.";
+  if(m!=="autoliquidation") return out.className="bad", out.innerHTML="❌ PRO sans la mention « autoliquidation » → <b>BAR</b>.";
+  if(ftnTTC) return out.className="info", out.innerHTML="ℹ️ FTN affiche <b>TTC</b> mais c’est bien un <b>montant HT</b> (simple erreur d’affichage).";
+  out.className="ok"; out.innerHTML="✅ Papier HT + mention « autoliquidation » → <b>OK</b>.";
+}
+function resetTVA(){
+  $("#tva-ttc").checked=false; $("#tva-mention").value="autoliquidation"; $("#tva-ftn-ttc").checked=false;
+  $("#tva-out").className="warn"; $("#tva-out").innerHTML="👉 Coche/choisis puis « Décider ».";
+}
+
+/* -------------------------------- Exercices ------------------------------- */
+/* Banque embarquée → fonctionne offline et en prod */
+const EXOS = [
+  {q:"E. Échéancier OK. TU déclaré 12,900 c€/kWh ; attendu 13,906 c€/kWh (pas une histoire d’unités).", ok:"BAR",
+   why:"Le tarif unitaire déclaré ne correspond pas à l’échéancier.", rule:"E + TU faux = BAR", action:"Renvoie la facture au producteur (BAR)."},
+  {q:"AF. 0,13906 € au lieu de 13,906 c€/kWh (même valeur).", ok:"Corriger AF (unité)",
+   why:"Seule tolérance : inversion des unités €↔c€ à valeur identique.", rule:"Inversion d’unités = OK", action:"Corrige l’unité côté AF, pas le prix."},
+  {q:"E. FUTUNOA 2031,60 € ; compta 2032,20 € ; cause = arrondis.", ok:"BAP",
+   why:"Écart ≤ 1 € expliqué par Q×TU/arrondis.", rule:"E ±1 € (arrondis) = BAP", action:"Valide le paiement (BAP)."},
+  {q:"AF. FUTUNOA 2031,60 € ; compta 2032,20 €.", ok:"Corriger total",
+   why:"AF : pas de tolérance opérationnelle.", rule:"AF = corriger 2ᵉ montant", action:"Corrige le 2ᵉ montant total."},
+  {q:"Facture papier : TTC.", ok:"BAR",
+   why:"Autoliquidation depuis 01/04/2012 : pas de TVA facturée.", rule:"Papier TTC = BAR", action:"Demande facture corrigée HT (BAR)."},
+  {q:"PRO : mention « 293 B » au lieu d’« autoliquidation ».", ok:"BAR",
+   why:"Pour un PRO, la mention obligatoire est « autoliquidation ». ", rule:"PRO sans autoliquidation = BAR", action:"Demande correction (BAR)."},
+  {q:"AF. TU au-dessus du plafond pour S21SUP100.", ok:"Corriger AF (plafond)",
+   why:"Plafond S21SUP100 = 4,000 c€/kWh.", rule:"Plafond → appliquer", action:"Corrige la valeur avec le plafond."},
+  {q:"E. Contrat FV16BOA, TU non nul.", ok:"BAR",
+   why:"Plafond FV16BOA = 0,000 c€/kWh ; tout dépassement = erreur côté producteur.", rule:"E + plafond dépassé = BAR", action:"Renvoie la facture (BAR)."},
+  {q:"E. FTN/GED KO à la réception.", ok:"Corriger FTN",
+   why:"Flux GED KO → corriger FTN.", rule:"GED KO = corriger FTN", action:"Corriger FTN et ajouter le commentaire « erreur de saisie Majorel »."},
+  {q:"FTN affiche TTC mais c’est bien HT.", ok:"BAP",
+   why:"Erreur d’affichage FTN, pas de TVA appliquée.", rule:"Affichage FTN TTC = HT", action:"Poursuivre, pas de BAR."}
+];
+
+function sample8(){ return shuffle([...EXOS]).slice(0,8); }
+
+function renderExos(){
+  const list = $("#exos-list");
+  list.innerHTML = "";
+  sample8().forEach((o,idx) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="k">🧩 Cas ${idx+1}</div>
+      <div style="margin:8px 0">${o.q}</div>
+      <div class="row">
+        <button class="btn ghost">BAP</button>
+        <button class="btn ghost">BAR</button>
+        <button class="btn ghost">Corriger AF (unité)</button>
+        <button class="btn ghost">Corriger AF (plafond)</button>
+        <button class="btn ghost">Corriger FTN</button>
+        <button class="btn ghost">Corriger total</button>
+      </div>
+      <div class="explain"></div>
+    `;
+    card.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+      const ans = b.textContent.trim();
+      const ok = ans === o.ok;
+      state.done++; if(ok) state.score++; save(); renderKPIs();
+      const box = card.querySelector(".explain");
+      box.innerHTML = `
+        <div class="${ok?'ok':'bad'}">
+          <b>${ok?'Bonne réponse':'Mauvaise réponse'}</b><br>
+          Décision attendue : <b>${o.ok}</b>
+          <div class="rule">Règle : ${o.rule}</div>
+          <p class="k">Pourquoi : ${o.why}</p>
+          <p><b>Action :</b> ${o.action}</p>
+        </div>`;
+    }));
+    list.appendChild(card);
+  });
+}
+
+/* --------------------------------- Init ----------------------------------- */
+document.addEventListener("DOMContentLoaded", () => {
+  initNav();
+  renderKPIs();
+
+  // TU
+  $("#tu-decide").addEventListener("click", decideTU);
+  $("#tu-reset").addEventListener("click", resetTU);
+
+  // Montant
+  $("#mt-decide").addEventListener("click", decideMT);
+  $("#mt-reset").addEventListener("click", resetMT);
+
+  // TVA
+  $("#tva-decide").addEventListener("click", decideTVA);
+  $("#tva-reset").addEventListener("click", resetTVA);
+
+  // Exercices
+  $("#exos-reload").addEventListener("click", renderExos);
+  $("#exos-reset").addEventListener("click", () => { localStorage.removeItem(KEY); location.reload(); });
+  renderExos();
+});
