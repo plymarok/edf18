@@ -24,7 +24,9 @@
   <!-- ACCUEIL -->
   <section id="view-home" class="view show">
     <h1>Bienvenue</h1>
-    <p class="k">Parcours pédagogique : <b>Tarif unitaire</b>, <b>Montant total</b>, <b>TVA/TTC</b> + <b>exercices</b> avec explications.</p>
+    <p class="k">
+      Parcours pédagogique : <b>Tarif unitaire</b>, <b>Montant total</b>, <b>TVA/TTC</b> + <b>exercices</b> avec explications.
+    </p>
 
     <div class="kpis">
       <div class="kpi"><div class="k">Score global</div><b id="kpi-score">0%</b></div>
@@ -36,22 +38,33 @@
     <div class="grid">
       <div class="card">
         <h2>1) Tarif unitaire</h2>
-        <p>Aucune tolérance (sauf inversion d’unités €↔c€ à valeur identique). Échéancier correct : L=1,00000, changement au mois de la date d’effet, plafonds.</p>
+        <p>
+          Aucune tolérance (sauf inversion d’unités €↔c€ à valeur identique).
+          Échéancier correct : L=1,00000, <b>1 changement/an</b> au mois de la date d’effet, <b>plafonds</b>.
+          <br><span class="pill">Formule</span> <b>Tarif échéancier = Rémunération × coef&nbsp;L</b> (voir “calculatrice coef L” dans la BàO).
+        </p>
         <button class="btn primary go" data-view="tu">Ouvrir</button>
       </div>
       <div class="card">
         <h2>2) Montant total</h2>
-        <p>Comparer FUTUNOA vs montant envoyé à la compta. E : ±1 € (TU faux → BAR ; arrondis → BAP). AF : corriger systématiquement le 2ᵉ montant.</p>
+        <p>
+          Comparer <b>FUTUNOA</b> vs montant envoyé à la <b>compta</b>.
+          E : ±1 € (TU faux → BAR ; arrondis → BAP). AF : corriger systématiquement le <b>2ᵉ montant</b>.
+        </p>
         <button class="btn primary go" data-view="montant">Ouvrir</button>
       </div>
       <div class="card">
         <h2>3) TVA / TTC</h2>
-        <p>Depuis 01/04/2012 : autoliquidation (pas de TVA facturée). Facture papier TTC → BAR. PRO : mention « autoliquidation » obligatoire.</p>
+        <p>
+          Depuis 01/04/2012 : autoliquidation (pas de TVA facturée).
+          Facture papier <b>TTC</b> → BAR. PRO : mention <b>« autoliquidation »</b> obligatoire.
+          <br>Note FTN : l’outil peut afficher <b>TTC</b> mais il s’agit bien d’un <b>montant HT</b> (simple erreur d’affichage).
+        </p>
         <button class="btn primary go" data-view="tva">Ouvrir</button>
       </div>
       <div class="card">
         <h2>🎯 Exercices 360°</h2>
-        <p>Cas mélangés, correction détaillée après chaque réponse (décision, règle, pourquoi, action).</p>
+        <p>Cas mélangés, correction détaillée (décision, règle, pourquoi, action).</p>
         <button class="btn primary go" data-view="exos">S’entraîner</button>
       </div>
     </div>
@@ -68,11 +81,30 @@
             <label class="opt"><input type="radio" name="tu-type" value="AF"> Facture <b>AF</b></label>
             <label class="opt"><input type="radio" name="tu-type" value="E"> Facture <b>E</b></label>
           </div>
+
+          <label>Type de contrat :
+            <select id="tu-contrat">
+              <option value="standard">Standard</option>
+              <option value="FV16BOA">FV16BOA (plafond 0,000 c€/kWh)</option>
+              <option value="S21SUP100">S21SUP100 (plafond 4,000 c€/kWh)</option>
+            </select>
+          </label>
+
           <label class="opt"><input type="checkbox" id="tu-ech" checked> Échéancier correct (L=1,00000, 1 changement/an, plafonds).</label>
           <label class="opt"><input type="checkbox" id="tu-unit"> Inversion d’unités (€ ↔ c€/kWh) mais même valeur.</label>
           <label class="opt"><input type="checkbox" id="tu-ceil"> Tarif unitaire au-dessus du plafond.</label>
           <label class="opt"><input type="checkbox" id="tu-wrong"> Tarif unitaire faux (≠ échéancier).</label>
+
+          <label class="opt">
+            <input type="checkbox" id="tu-gedko">
+            Facture dans la <b>GED KO</b> (FTN KO) → corriger FTN + commentaire « erreur de saisie Majorel »
+          </label>
+
+          <p class="k" style="margin:4px 0 0">
+            Rappels : T1/T2/T3 comparés • <b>Tarif = Rémunération × coef&nbsp;L</b> • Outil « calculatrice coef L » disponible dans la BàO.
+          </p>
         </div>
+
         <div class="row">
           <button id="tu-decide" class="btn primary">Décider</button>
           <button id="tu-reset" class="btn ghost">Réinitialiser</button>
@@ -81,9 +113,9 @@
       </div>
 
       <div class="card">
-        <h3>Mémo</h3>
-        <p><span class="pill">Tolérance</span> aucune (sauf inversion €↔c€ à valeur identique).</p>
-        <p><span class="pill">Traitement</span> AF → corriger. E → si échéancier OK : BAR ; si KO : Redmine.</p>
+        <h3>Plafonds à connaître</h3>
+        <p><span class="pill">FV16BOA</span> plafond <b>0,000 c€/kWh</b> (tout dépassement = KO côté producteur).</p>
+        <p><span class="pill">S21SUP100</span> plafond <b>4,000 c€/kWh</b>.</p>
       </div>
     </div>
   </section>
@@ -136,6 +168,7 @@
               <option value="aucune">aucune</option>
             </select>
           </label>
+          <label class="opt"><input type="checkbox" id="tva-ftn-ttc"> FTN affiche <b>TTC</b> mais c’est en réalité <b>HT</b> (erreur d’affichage)</label>
         </div>
         <div class="row">
           <button id="tva-decide" class="btn primary">Décider</button>
